@@ -1,1 +1,4 @@
 RMarkdown
+```{r, results='asis'}
+knitr::kable(mtcars)
+```
