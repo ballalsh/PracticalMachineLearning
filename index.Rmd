@@ -1,4 +1,4 @@
 RMarkdown
-```{r, echo=FALSE}
+```{r}
 plot(cars)
 ```
