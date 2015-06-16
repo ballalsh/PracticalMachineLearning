@@ -1,4 +1,4 @@
 RMarkdown
-```{r, results='asis'}
-knitr::kable(mtcars)
+```{r, echo=FALSE}
+plot(cars)
 ```
