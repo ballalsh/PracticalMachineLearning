@@ -1,4 +1,99 @@
-RMarkdown
+## Practical Machine Learning
+
+# Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+
+# Data 
+
+The training data for this project are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Loading required libraries and data
+
 ```{r}
-plot(cars)
+library(caret)
+library(randomForest)
+pmltrain = read.csv("./Coursera/practicalmachinelearning/pml-training.csv",na.strings=c("NA","#DIV/0!",""))
+pmltest = read.csv("./Coursera/practicalmachinelearning/pml-testing.csv",na.strings=c("NA","#DIV/0!",""))
+summary(pmltrain)
+```
+
+## Processing the data
+
+1. Replace #DIV/0! with NA (already done in read.csv)
+2. Drop columns with NAs 
+2. Drop columns with blanks
+
+```{r}
+ncol(pmltrain)
+ncol(pmltrain[,sapply(pmltrain,is.numeric)]) #150 out of 160 columns are numeric
+
+sum(is.na(colSums(pmltrain[,sapply(pmltrain,is.numeric)]))) # 94 columns have NAs
+
+ColsWithNAs = names(subset(is.na(colSums(pmltrain[,sapply(pmltrain,is.numeric)])),is.na(colSums(pmltrain[,sapply(pmltrain,is.numeric)]))==TRUE))
+
+pmltrain = pmltrain[,!(colnames(pmltrain) %in% c(ColsWithNAs,"X","kurtosis_yaw_belt","skewness_yaw_belt","kurtosis_yaw_dumbbell", "skewness_yaw_dumbbell","kurtosis_yaw_forearm","skewness_yaw_forearm"))]
+pmltest = pmltest[,!(colnames(pmltrain) %in% c(ColsWithNAs,"X","kurtosis_yaw_belt","skewness_yaw_belt","kurtosis_yaw_dumbbell", "skewness_yaw_dumbbell","kurtosis_yaw_forearm","skewness_yaw_forearm"))]
+
+```
+
+60 columns remain
+
+## Feature Selection and Model fitting
+
+1. Create test and training sets 
+2. Drop columns 1:6 since they are qualitative
+3. Fit a model using randomForest (seed = 54321)
+
+```
+set.seed(54321)
+inTrain = createDataPartition(pmltrain$classe,p=0.7,list=FALSE)
+
+training = pmltrain[inTrain,-c(1:6)]
+testing = pmltrain[-inTrain,-c(1:6)]
+
+model = randomForest(classe~.,data=training)
+model
+
+```
+
+OOB error is 0.52%
+Predict for both Training and Test data and display the confusion matrix
+
+```
+pred1 = predict(model,newdata=training)
+pred2 = predict(model,newdata=testing)
+
+confusionMatrix(pred1,training$classe)
+confusionMatrix(pred2,testing$classe)
+
+```
+
+Accuracy of validation set (dataset held out from pmltrain dataset) = 99.39%
+
+Predict for Coursera Submission
+
+```
+pmltestForPred = predict(model,newdata=pmltest)
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+setwd("./Coursera/practicalmachinelearning/answers/")
+
+pml_write_files(pmltestForPred)
 ```
