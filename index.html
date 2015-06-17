@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>PracticalMachineLearning by ballalsh</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>PracticalMachineLearning</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/ballalsh/PracticalMachineLearning">View the Project on GitHub <small>ballalsh/PracticalMachineLearning</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/ballalsh/PracticalMachineLearning/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/ballalsh/PracticalMachineLearning/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/ballalsh/PracticalMachineLearning">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h2>
+<a id="practical-machine-learning" class="anchor" href="#practical-machine-learning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Practical Machine Learning</h2>
+
+<h1>
+<a id="background" class="anchor" href="#background" aria-hidden="true"><span class="octicon octicon-link"></span></a>Background</h1>
+
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset). </p>
+
+<h1>
+<a id="data" class="anchor" href="#data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data</h1>
+
+<p>The training data for this project are available here: </p>
+
+<p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv</a></p>
+
+<p>The test data are available here: </p>
+
+<p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a></p>
+
+<p>The data for this project come from this source: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.</p>
+
+<h2>
+<a id="loading-required-libraries-and-data" class="anchor" href="#loading-required-libraries-and-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Loading required libraries and data</h2>
+
+<div class="highlight highlight-r"><pre>library(<span class="pl-smi">caret</span>)
+library(<span class="pl-smi">randomForest</span>)
+<span class="pl-v">pmltrain</span> <span class="pl-k">=</span> read.csv(<span class="pl-s"><span class="pl-pds">"</span>./Coursera/practicalmachinelearning/pml-training.csv<span class="pl-pds">"</span></span>,<span class="pl-v">na.strings</span><span class="pl-k">=</span>c(<span class="pl-s"><span class="pl-pds">"</span>NA<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>#DIV/0!<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>))
+<span class="pl-v">pmltest</span> <span class="pl-k">=</span> read.csv(<span class="pl-s"><span class="pl-pds">"</span>./Coursera/practicalmachinelearning/pml-testing.csv<span class="pl-pds">"</span></span>,<span class="pl-v">na.strings</span><span class="pl-k">=</span>c(<span class="pl-s"><span class="pl-pds">"</span>NA<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>#DIV/0!<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>))
+summary(<span class="pl-smi">pmltrain</span>)</pre></div>
+
+<h2>
+<a id="processing-the-data" class="anchor" href="#processing-the-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Processing the data</h2>
+
+<ol>
+<li>Replace #DIV/0! with NA (already done in read.csv)</li>
+<li>Drop columns with NAs </li>
+<li>Drop columns with blanks</li>
+</ol>
+
+<div class="highlight highlight-r"><pre>ncol(<span class="pl-smi">pmltrain</span>)
+ncol(<span class="pl-smi">pmltrain</span>[,sapply(<span class="pl-smi">pmltrain</span>,<span class="pl-smi">is.numeric</span>)]) <span class="pl-c">#150 out of 160 columns are numeric</span>
+
+sum(is.na(colSums(<span class="pl-smi">pmltrain</span>[,sapply(<span class="pl-smi">pmltrain</span>,<span class="pl-smi">is.numeric</span>)]))) <span class="pl-c"># 94 columns have NAs</span>
+
+<span class="pl-v">ColsWithNAs</span> <span class="pl-k">=</span> names(subset(is.na(colSums(<span class="pl-smi">pmltrain</span>[,sapply(<span class="pl-smi">pmltrain</span>,<span class="pl-smi">is.numeric</span>)])),is.na(colSums(<span class="pl-smi">pmltrain</span>[,sapply(<span class="pl-smi">pmltrain</span>,<span class="pl-smi">is.numeric</span>)]))<span class="pl-k">==</span><span class="pl-c1">TRUE</span>))
+
+<span class="pl-v">pmltrain</span> <span class="pl-k">=</span> <span class="pl-smi">pmltrain</span>[,<span class="pl-k">!</span>(colnames(<span class="pl-smi">pmltrain</span>) <span class="pl-k">%in%</span> c(<span class="pl-smi">ColsWithNAs</span>,<span class="pl-s"><span class="pl-pds">"</span>X<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_belt<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_belt<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_dumbbell<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_forearm<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_forearm<span class="pl-pds">"</span></span>))]
+<span class="pl-v">pmltest</span> <span class="pl-k">=</span> <span class="pl-smi">pmltest</span>[,<span class="pl-k">!</span>(colnames(<span class="pl-smi">pmltrain</span>) <span class="pl-k">%in%</span> c(<span class="pl-smi">ColsWithNAs</span>,<span class="pl-s"><span class="pl-pds">"</span>X<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_belt<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_belt<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_dumbbell<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_dumbbell<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>kurtosis_yaw_forearm<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>skewness_yaw_forearm<span class="pl-pds">"</span></span>))]
+</pre></div>
+
+<p>60 columns remain</p>
+
+<h2>
+<a id="feature-selection-and-model-fitting" class="anchor" href="#feature-selection-and-model-fitting" aria-hidden="true"><span class="octicon octicon-link"></span></a>Feature Selection and Model fitting</h2>
+
+<ol>
+<li>Create test and training sets </li>
+<li>Drop columns 1:6 since they are qualitative</li>
+<li>Fit a model using randomForest (seed = 54321)</li>
+</ol>
+
+<pre><code>set.seed(54321)
+inTrain = createDataPartition(pmltrain$classe,p=0.7,list=FALSE)
+
+training = pmltrain[inTrain,-c(1:6)]
+testing = pmltrain[-inTrain,-c(1:6)]
+
+model = randomForest(classe~.,data=training)
+model
+
+</code></pre>
+
+<p>OOB error is 0.52%
+Predict for both Training and Test data and display the confusion matrix</p>
+
+<pre><code>pred1 = predict(model,newdata=training)
+pred2 = predict(model,newdata=testing)
+
+confusionMatrix(pred1,training$classe)
+confusionMatrix(pred2,testing$classe)
+
+</code></pre>
+
+<p>Accuracy of validation set (dataset held out from pmltrain dataset) = 99.39%</p>
+
+<p>Predict for Coursera Submission</p>
+
+<pre><code>pmltestForPred = predict(model,newdata=pmltest)
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+setwd("./Coursera/practicalmachinelearning/answers/")
+
+pml_write_files(pmltestForPred)
+</code></pre>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/ballalsh">ballalsh</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
